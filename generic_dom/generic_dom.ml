@@ -1,9 +1,3 @@
-module Node_kind = struct
-  type t =
-    | Text
-    | Element
-end
-
 module type S = sig
   type node
 
