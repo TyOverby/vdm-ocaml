@@ -1,0 +1,7 @@
+(library
+ (name generic_dom)
+ (libraries base core_kernel vdm)
+ (js_of_ocaml)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))
