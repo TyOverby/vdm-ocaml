@@ -1,0 +1,7 @@
+(library
+ (name vdm)
+ (libraries base core_kernel)
+ (js_of_ocaml)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))
