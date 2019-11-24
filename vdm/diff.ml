@@ -13,35 +13,15 @@ let rec diff a b ~send =
     | Text _, Element { node_name; _ } ->
       send (Replace_with_element { node_name });
       failwith "not implemented"
-    | Element a, Element b
+    | Element a, (Element b as e)
       when not (String.equal a.node_name b.node_name) ->
-      send (Replace_with_element { node_name = b.node_name });
-      failwith "not implemented"
-    | (( (Element { children = Element.Linear _; _ } as _a)
-       , Element { children = Element.Ordered _; _ } ) as _b)
-    | (( (Element { children = Element.Ordered _; _ } as _a)
-       , Element { children = Element.Linear _; _ } ) as _b) ->
-      failwith "unimplemented"
+      Mount.replacing e ~send
     | ( Element
-          { attrs = _a_attrs
-          ; children = Element.Ordered _a_children
-          ; _
-          }
+          ({ node_name = _; attrs = a_attrs; children = a_children }
+          as a)
       , Element
-          { attrs = _b_attrs
-          ; children = Element.Ordered _b_children
-          ; _
-          } ) -> failwith "not implemented"
-    | ( Element
-          { attrs = a_attrs
-          ; children = Element.Linear a_children
-          ; _
-          }
-      , Element
-          { attrs = b_attrs
-          ; children = Element.Linear b_children
-          ; _
-          } ) ->
+          ({ node_name = _; attrs = b_attrs; children = b_children }
+          as b) ) ->
       let attrs_diff =
         Map.symmetric_diff ~data_equal:String.equal a_attrs b_attrs
         |> Sequence.to_list
@@ -52,18 +32,42 @@ let rec diff a b ~send =
         send Start_attrs;
         List.iter attrs_diff ~f:(function
             | key, `Left _ -> send (Remove_attribute { key })
-            | key, `Right value | key, `Unequal (_, value) ->
-              send (Add_attribute { key; value }));
+            | key, `Right data | key, `Unequal (_, data) ->
+              send (Add_attribute { key; data }));
         send End_attrs);
-      if phys_equal a_children b_children
-      then ()
-      else (
+      let open Element in
+      (match a_children, b_children with
+      | a, b when phys_equal a b -> ()
+      | _, _
+        when Element.has_no_children a && Element.has_no_children b
+        -> ()
+      | Linear a, Linear b ->
         send Start_children;
-        diff_linear_children a_children b_children ~send;
-        send End_children))
+        diff_linear_children a b ~send;
+        send End_children
+      | Ordered a, Linear b ->
+        let a =
+          a
+          |> Ordered_children.ro_array
+          |> Linear_children.of_ro_array
+        in
+        send Start_children;
+        diff_linear_children a b ~send;
+        send End_children
+      | Linear a, Ordered b ->
+        let b =
+          b
+          |> Ordered_children.ro_array
+          |> Linear_children.of_ro_array
+        in
+        send Start_children;
+        diff_linear_children a b ~send;
+        send End_children
+      | Ordered _a, Ordered _b ->
+        failwith "Ordered a, Ordered b not implemented"))
 
 and diff_linear_children xs ys ~send =
-  let eq a b =
+  let eq_kind a b =
     phys_equal a b
     ||
     match a, b with
@@ -71,10 +75,15 @@ and diff_linear_children xs ys ~send =
     | Text _, Text _ -> true
     | _ -> false
   in
+  let eq_accurate a b = phys_equal a b || Node.equal a b in
   let diff = diff ~send in
-  Linear_children.diff xs ys ~diff ~eq ~send ~on_insert:(function
-      | Text text -> send (Insert_text_before { text })
-      | Element { node_name; _ } ->
-        send (Insert_element_before { node_name });
-        failwith "unimplemented")
+  let on_insert = Mount.inserting ~send in
+  Linear_children.diff
+    xs
+    ys
+    ~diff
+    ~eq_kind
+    ~eq_accurate
+    ~send
+    ~on_insert
 ;;

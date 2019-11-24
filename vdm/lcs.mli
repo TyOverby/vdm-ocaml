@@ -1,4 +1,6 @@
-type 'a ro_array = ('a, [ `Read ]) Core_kernel.Array.Permissioned.t
+open! Core_kernel
+
+type 'a ro_array = ('a, [ `Read ]) Array.Permissioned.t
 
 module Matrix : sig
   type t
