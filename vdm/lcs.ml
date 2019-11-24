@@ -9,9 +9,12 @@ module Matrix = struct
   type t = int ro_array ro_array
 
   let create x y ~eq =
-    let xl, yl = Array.Permissioned.length x, Array.Permissioned.length y in
+    let xl, yl =
+      Array.Permissioned.length x, Array.Permissioned.length y
+    in
     let matrix = Array.create ~len:(xl + 1) [||] in
-    Array.map_inplace matrix ~f:(fun _ -> Array.create ~len:(yl + 1) 0);
+    Array.map_inplace matrix ~f:(fun _ ->
+        Array.create ~len:(yl + 1) 0);
     Array.Permissioned.iteri x ~f:(fun i xi ->
         Array.Permissioned.iteri y ~f:(fun k yk ->
             matrix.(i + 1).(k + 1)
@@ -69,6 +72,8 @@ let rec build_diff c x y ~eq i k =
 ;;
 
 let diff c x y ~eq =
-  let xl, yl = Array.Permissioned.length x, Array.Permissioned.length y in
+  let xl, yl =
+    Array.Permissioned.length x, Array.Permissioned.length y
+  in
   build_diff c x y xl yl ~eq |> List.rev
 ;;

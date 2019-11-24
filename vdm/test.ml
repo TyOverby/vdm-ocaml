@@ -1,15 +1,21 @@
 open! Core_kernel
 open Types
 
-let element node_name ?(attrs = String.Map.empty) ?(children = []) () =
-  let children = Array.Permissioned.of_list children in
-  Element { Element.node_name; attrs; children = Element.Linear children }
+let element node_name ?(attrs = String.Map.empty) ?(children = []) ()
+  =
+  let children = Linear_children.of_list children in
+  Element
+    { Element.node_name; attrs; children = Element.Linear children }
 ;;
 
 let div = element "div"
 let empty_div () = element "div" ()
 let empty_span () = element "span" ()
-let print_diff a b = Diff.diff a b ~send:(fun i -> print_s (sexp_of_instruction i))
+
+let print_diff a b =
+  Diff.diff a b ~send:(fun i ->
+      i |> Instruction.sexp_of_t |> print_s)
+;;
 
 let%expect_test "text_to_text" =
   let a = Text "hi" in

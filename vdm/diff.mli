@@ -1,1 +1,5 @@
-val diff : Types.node -> Types.node -> send:(Types.instruction -> unit) -> unit
+val diff
+  :  Types.node
+  -> Types.node
+  -> send:(Instruction.t -> unit)
+  -> unit
