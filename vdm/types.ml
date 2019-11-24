@@ -1,32 +1,51 @@
 open! Core_kernel
 
-type element =
-  { kind : string
-  ; attrs : string String.Map.t
-  ; children : (node, [ `Read ]) Array.Permissioned.t
-  }
-[@@deriving sexp]
+module Linear_children = struct
+  type 'node t = ('node, [ `Read ]) Array.Permissioned.t
+end
 
-and text = String.t [@@deriving sexp]
+module Ordered_children = struct
+  type 'node t =
+    | Hidden :
+        { map : ('k, 'node, 'cmp) Map.t
+        ; type_id : ('k * 'node * 'cmp) Type_equal.Id.t
+        }
+        -> 'node t
+end
 
-and node =
-  | Element of element
-  | Text of text
-[@@deriving sexp]
+module Element = struct
+  type 'node kind =
+    | Ordered : 'node Ordered_children.t -> 'node kind
+    | Linear : 'node Linear_children.t -> 'node kind
+
+  type 'node t =
+    { node_name : string
+    ; attrs : string String.Map.t
+    ; children : 'node kind
+    }
+end
+
+type node =
+  | Element of node Element.t
+  | Text of String.t
 
 type instruction =
-  | Change_text_to of string
-  | Replace_with_element of element
-  | Replace_with_text of string
+  | Change_text_to of { text : string }
+  | Replace_with_element of { node_name : string }
+  | Replace_with_text of { text : string }
   | Start_attrs
-  | Remove_attribute of string
-  | Add_attribute of string * string
+  | Insert_text_before of { text : string }
+  | Insert_element_before of { node_name : string }
+  | Remove_attribute of { key : string }
+  | Add_attribute of
+      { key : string
+      ; value : string
+      }
   | End_attrs
   | Start_children
-  | Skip of int
+  | Skip of { how_many : int }
   | Descend
   | Ascend
   | Remove_current
-  | Insert_before of node
   | End_children
 [@@deriving sexp]

@@ -29,6 +29,7 @@ type 'a diff_element =
   | Insertion of 'a
   | Both_same of 'a * 'a
 
+(* PERF:  Maybe use a queue instead of a list? *)
 let rec build_diff c x y ~eq i k =
   let module Diff_type = struct
     type t =

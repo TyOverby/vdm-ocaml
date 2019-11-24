@@ -8,29 +8,39 @@ let rec diff a b ~send =
   else (
     match a, b with
     | Text a, Text b when String.equal a b -> ()
-    | Text _, Text t -> send (Change_text_to t)
-    | Text _, Element e -> send (Replace_with_element e)
-    | Element _, Text t -> send (Replace_with_text t)
-    | Element a, Element b when not (String.equal a.kind b.kind) ->
-      send (Replace_with_element b)
-    | Element a, Element b ->
+    | Text _, Text text | Element _, Text text -> send (Change_text_to { text })
+    | Text _, Element { node_name; _ } ->
+      send (Replace_with_element { node_name });
+      failwith "not implemented"
+    | Element a, Element b when not (String.equal a.node_name b.node_name) ->
+      send (Replace_with_element { node_name = b.node_name });
+      failwith "not implemented"
+    | (( (Element { children = Element.Linear _; _ } as _a)
+       , Element { children = Element.Ordered _; _ } ) as _b)
+    | (( (Element { children = Element.Ordered _; _ } as _a)
+       , Element { children = Element.Linear _; _ } ) as _b) -> failwith "unimplemented"
+    | ( Element { attrs = _a_attrs; children = Element.Ordered _a_children; _ }
+      , Element { attrs = _b_attrs; children = Element.Ordered _b_children; _ } ) ->
+      failwith "not implemented"
+    | ( Element { attrs = a_attrs; children = Element.Linear a_children; _ }
+      , Element { attrs = b_attrs; children = Element.Linear b_children; _ } ) ->
       let attrs_diff =
-        Map.symmetric_diff ~data_equal:String.equal a.attrs b.attrs |> Sequence.to_list
+        Map.symmetric_diff ~data_equal:String.equal a_attrs b_attrs |> Sequence.to_list
       in
       if List.is_empty attrs_diff
       then ()
       else (
         send Start_attrs;
-        attrs_diff
-        |> List.iter ~f:(function
-               | k, `Left _ -> send (Remove_attribute k)
-               | k, `Right v | k, `Unequal (_, v) -> send (Add_attribute (k, v)));
+        List.iter attrs_diff ~f:(function
+            | key, `Left _ -> send (Remove_attribute { key })
+            | key, `Right value | key, `Unequal (_, value) ->
+              send (Add_attribute { key; value }));
         send End_attrs);
-      if phys_equal a.children b.children
+      if phys_equal a_children b_children
       then ()
       else (
         send Start_children;
-        diff_children a.children b.children ~send;
+        diff_children a_children b_children ~send;
         send End_children))
 
 and diff_children xs ys ~send =
@@ -38,38 +48,21 @@ and diff_children xs ys ~send =
     phys_equal a b
     ||
     match a, b with
-    | Element a, Element b -> String.equal a.kind b.kind
+    | Element a, Element b -> String.equal a.node_name b.node_name
     | Text _, Text _ -> true
     | _ -> false
   in
   let matrix = Lcs.Matrix.create xs ys ~eq in
   let diff_list = Lcs.diff matrix xs ys ~eq in
   List.iter diff_list ~f:(function
-      | Both_same (a, b) when phys_equal a b -> send (Skip 1)
+      | Both_same (a, b) when phys_equal a b -> send (Skip { how_many = 1 })
       | Both_same (a, b) ->
         send Descend;
         diff a b ~send;
         send Ascend
       | Removal _ -> send Remove_current
-      | Insertion a -> send (Insert_before a))
+      | Insertion (Text text) -> send (Insert_text_before { text })
+      | Insertion (Element { node_name; _ }) ->
+        send (Insert_element_before { node_name });
+        failwith "unimplemented")
 ;;
-
-(*
-  let xl, yl = Array.Permissioned.length xs, Array.Permissioned.length ys in
-  let rec _left_start_offset i xs ys =
-    if i >= xl || i >= yl
-    then i
-    else (
-      let a, b = Array.Permissioned.get xs i, Array.Permissioned.get ys i in
-      if phys_equal a b then _left_start_offset (i + 1) xs ys else i)
-  in
-  let rec _right_start_offset i xs ys =
-    if i >= xl || i >= yl
-    then i
-    else (
-      let a, b =
-        Array.Permissioned.get xs (xl - i - 1), Array.Permissioned.get ys (yl - i - 1)
-      in
-      if phys_equal a b then _right_start_offset (i + 1) xs ys else i)
-  in
-*)
