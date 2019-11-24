@@ -1,6 +1,6 @@
-open Core_kernel
-open Types
-open Instruction
+open! Core_kernel
+open! Import
+open Node
 
 let rec diff a b ~send =
   if phys_equal a b

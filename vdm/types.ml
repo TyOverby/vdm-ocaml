@@ -12,6 +12,8 @@ module Element = struct
     }
 end
 
-type node =
-  | Element of node Element.t
-  | Text of String.t
+module Node = struct
+  type t =
+    | Element of t Element.t
+    | Text of String.t
+end

@@ -1,5 +1,6 @@
 open! Core_kernel
-open Types
+open! Import
+open Node
 
 let element node_name ?(attrs = String.Map.empty) ?(children = []) ()
   =
@@ -44,7 +45,7 @@ let%expect_test "element_to_element_different_kind" =
 
   (Failure "not implemented")
   Raised at file "stdlib.ml", line 33, characters 17-33
-  Called from file "vdm/test.ml", line 31, characters 2-16
+  Called from file "vdm/test.ml", line 38, characters 2-16
   Called from file "collector/expect_test_collector.ml", line 225, characters 12-19
 
   Trailing output
