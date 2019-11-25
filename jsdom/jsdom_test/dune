@@ -1,0 +1,7 @@
+(library
+ (name js_dom_test)
+ (libraries js_dom core_kernel js_of_ocaml)
+ (js_of_ocaml)
+ (inline_tests (modes js))
+ (preprocess
+  (pps ppx_jane)))

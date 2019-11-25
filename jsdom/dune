@@ -1,7 +1,6 @@
 (library
  (name js_dom)
- (libraries base core_kernel)
- (js_of_ocaml)
- (inline_tests)
+ (libraries core_kernel js_of_ocaml)
+ (js_of_ocaml (javascript_files ./packed.js ./runtime.js))
  (preprocess
   (pps ppx_jane)))
