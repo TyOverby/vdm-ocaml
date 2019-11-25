@@ -15,6 +15,8 @@ type 'a diff_element =
       ; right : 'a
       }
 
+val rank : _ diff_element -> int
+
 val diff
   :  ('k, 'v, 'cmp) Map.t
   -> ('k, 'v, 'cmp) Map.t

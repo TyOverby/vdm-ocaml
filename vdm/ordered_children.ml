@@ -1,4 +1,5 @@
 open! Core_kernel
+open Instruction
 
 type 'node t =
   | Hidden :
@@ -33,13 +34,30 @@ let ro_array (Hidden { map; _ }) =
   Array.Permissioned.of_array_id array
 ;;
 
-let actual_diff a b ~send ~data_equal = 
-    let _ptr = ref 0 in
-    Mdf.diff a b ~data_equal |> List.iter ~f:(fun _ -> failwith "")
+let actual_diff a b ~send ~data_equal ~on_insert ~diff =
+  let ptr = ref 0 in
+  Mdf.diff a b ~data_equal
+  |> List.iter ~f:(fun e ->
+         let rank = Mdf.rank e in
+         send (Skip { how_many = rank - !ptr });
+         ptr := rank;
+         match e with
+         | Removal _ -> send Remove_current
+         | Insertion { value; _ } -> on_insert value
+         | Both_same { left; right; _ } -> diff left right)
+;;
 
-let diff a b ~send  = 
+let diff a b ~send ~on_insert ~diff ~eq_accurate =
   let (Hidden { map = map_a; type_id = type_id_a }) = a in
   let (Hidden { map = map_b; type_id = type_id_b }) = b in
   match Type_equal.Id.same_witness type_id_a type_id_b with
-  | Some T -> actual_diff map_a map_b ~data_equal
-  | None -> false
+  | Some T ->
+    actual_diff
+      map_a
+      map_b
+      ~data_equal:eq_accurate
+      ~send
+      ~on_insert
+      ~diff
+  | None -> failwith "unimplemented type-equal differing witness"
+;;

@@ -63,8 +63,17 @@ let rec diff a b ~send =
         send Start_children;
         diff_linear_children a b ~send;
         send End_children
-      | Ordered _a, Ordered _b ->
-        failwith "Ordered a, Ordered b not implemented"))
+      | Ordered a, Ordered b ->
+        send Start_children;
+        diff_ordered_children a b ~send;
+        send End_children))
+
+and eq_accurate a b = phys_equal a b || Node.equal a b
+
+and diff_ordered_children xs ys ~send =
+  let on_insert = Mount.inserting ~send in
+  let diff = diff ~send in
+  Ordered_children.diff xs ys ~send ~diff ~on_insert ~eq_accurate
 
 and diff_linear_children xs ys ~send =
   let eq_kind a b =
@@ -75,7 +84,6 @@ and diff_linear_children xs ys ~send =
     | Text _, Text _ -> true
     | _ -> false
   in
-  let eq_accurate a b = phys_equal a b || Node.equal a b in
   let diff = diff ~send in
   let on_insert = Mount.inserting ~send in
   Linear_children.diff

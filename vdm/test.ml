@@ -18,7 +18,7 @@ let element_l
 let element_o
     node_name
     ?(attrs = String.Map.empty)
-    ?(children = String.Map.empty)
+    ?(children = Int.Map.empty)
     ()
   =
   let children = Ordered_children.make ~type_id ~map:children in
@@ -31,7 +31,7 @@ let empty_div () = element_l "div" ()
 let empty_span () = element_l "span" ()
 
 let div_o ~children =
-  element_o "div" ~children:(String.Map.of_alist_exn children)
+  element_o "div" ~children:(Int.Map.of_alist_exn children)
 ;;
 
 let print_diff a b =
@@ -171,7 +171,7 @@ let%expect_test "divi to divi text node" =
 
 let%expect_test "divi to divo text node" =
   let a = div ~children:[ Text "a" ] () in
-  let b = div_o ~children:[ "a", Text "a"; "b", Text "b" ] () in
+  let b = div_o ~children:[ 1, Text "a"; 2, Text "b" ] () in
   print_diff a b;
   [%expect
     {|
@@ -186,7 +186,7 @@ let%expect_test "divi to divo text node" =
 
 let%expect_test "divi to divo" =
   let a = div ~children:[ empty_div () ] () in
-  let b = div_o ~children:[ "a", empty_span () ] () in
+  let b = div_o ~children:[ 1, empty_span () ] () in
   print_diff a b;
   [%expect
     {|

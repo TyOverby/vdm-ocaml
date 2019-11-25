@@ -15,6 +15,12 @@ type 'a diff_element =
       ; right : 'a
       }
 
+let rank = function
+  | Removal { rank; _ }
+  | Insertion { rank; _ }
+  | Both_same { rank; _ } -> rank
+;;
+
 let diff a b ~data_equal =
   let rank_for k =
     k
