@@ -1,0 +1,17 @@
+{
+  "name": "jsdom-js_of_ocaml",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "browserify": "browserify ./index.js > out.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "browserify": "^16.5.0",
+    "canvas": "^2.6.0",
+    "jsdom": "^15.2.1"
+  }
+}
