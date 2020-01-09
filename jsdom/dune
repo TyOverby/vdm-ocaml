@@ -1,5 +1,5 @@
 (library
- (name js_dom)
+ (name js_dom_bad)
  (libraries core_kernel js_of_ocaml)
  (js_of_ocaml (javascript_files ./packed.js ./runtime.js))
  (preprocess
